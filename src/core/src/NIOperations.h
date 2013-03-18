@@ -50,14 +50,14 @@ typedef void (^NIOperationDidFailBlock)(NIOperation* operation, NSError* error);
  */
 @interface NIOperation : NSOperation
 
-@property (readwrite, NI_WEAK) id<NIOperationDelegate> delegate;
-@property (readonly,  NI_STRONG) NSError* lastError;
-@property (readwrite, assign) NSInteger tag;
+@property (atomic, readwrite, NI_WEAK) id<NIOperationDelegate> delegate;
+@property (atomic, readonly,  NI_STRONG) NSError* lastError;
+@property (atomic, readwrite, assign) NSInteger tag;
 
-@property (readwrite, copy) NIOperationBlock didStartBlock;
-@property (readwrite, copy) NIOperationBlock didFinishBlock;
-@property (readwrite, copy) NIOperationDidFailBlock didFailWithErrorBlock;
-@property (readwrite, copy) NIOperationBlock willFinishBlock;
+@property (atomic, copy) NIOperationBlock didStartBlock;
+@property (atomic, copy) NIOperationBlock didFinishBlock;
+@property (atomic, copy) NIOperationDidFailBlock didFailWithErrorBlock;
+@property (atomic, copy) NIOperationBlock willFinishBlock;
 
 - (void)didStart;
 - (void)didFinish;

@@ -111,7 +111,7 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
 @interface NIAttributedLabel() <UIActionSheetDelegate>
 @property (nonatomic, NI_STRONG) NSMutableAttributedString* mutableAttributedString;
 @property (nonatomic, assign) CTFrameRef textFrame;
-@property (assign) BOOL detectingLinks; // Atomic.
+@property (atomic, assign) BOOL detectingLinks;
 @property (nonatomic, assign) BOOL linksHaveBeenDetected;
 @property (nonatomic, copy) NSArray* detectedlinkLocations;
 @property (nonatomic, NI_STRONG) NSMutableArray* explicitLinkLocations;

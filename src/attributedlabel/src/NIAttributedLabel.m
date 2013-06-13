@@ -148,6 +148,7 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
 @synthesize linksHaveBeenDetected = _linksHaveBeenDetected;
 @synthesize detectedlinkLocations = _detectedlinkLocations;
 @synthesize explicitLinkLocations = _explicitLinkLocations;
+@synthesize minimumTimeToShowHighlightedLinkBackgroundColor = _minimumTimeToShowHighlightedLinkBackgroundColor;
 @synthesize originalLink = _originalLink;
 @synthesize touchedLink = _touchedLink;
 @synthesize longPressTimer = _longPressTimer;
@@ -1055,10 +1056,23 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
     }
   }
 
-  self.touchedLink = nil;
-  self.originalLink = nil;
-
-  [self setNeedsDisplay];
+  if (self.minimumTimeToShowHighlightedLinkBackgroundColor) {
+    // save off current links, to detect if new touch occurs before block runs
+    NSTextCheckingResult *originalLink = self.originalLink;
+    NSTextCheckingResult *touchedLink = self.touchedLink;
+    const int64_t delta = (int64_t)(1.0e9 * self.minimumTimeToShowHighlightedLinkBackgroundColor);
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, delta), dispatch_get_main_queue(), ^{
+      if (touchedLink == self.touchedLink && originalLink == self.originalLink) {
+        self.touchedLink = nil;
+        self.originalLink = nil;
+        [self setNeedsDisplay];
+      } // else, new touch came in
+    });
+  } else {
+    self.touchedLink = nil;
+    self.originalLink = nil;
+    [self setNeedsDisplay];
+  }
 }
 
 

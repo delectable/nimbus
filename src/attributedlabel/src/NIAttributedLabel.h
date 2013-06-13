@@ -98,6 +98,7 @@ extern NSString * const kNILinkAttributeName;
 @property (nonatomic, assign) BOOL linksHaveUnderlines; // Default: NO
 @property (nonatomic, copy) NSDictionary *attributesForLinks; // Default: nil
 @property (nonatomic, copy) NSDictionary *attributesForHighlightedLink; // Default: nil
+@property (nonatomic, assign) NSTimeInterval minimumTimeToShowHighlightedLinkBackgroundColor; // default 0
 @property (nonatomic, assign) CGFloat lineHeight;
 
 @property (nonatomic, assign) NIVerticalTextAlignment verticalTextAlignment; // Default: NIVerticalTextAlignmentTop

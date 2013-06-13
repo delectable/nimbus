@@ -1440,7 +1440,7 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
         if (lastLineRange.length > 0) {
           // Remove any whitespace at the end of the line.
           unichar lastCharacter = [[truncationString string] characterAtIndex:lastLineRange.length - 1];
-          if ([[NSCharacterSet whitespaceAndNewlineCharacterSet] characterIsMember:lastCharacter]) {
+          if (lastCharacter != 0x00a0 /* non breaking space */ && [[NSCharacterSet whitespaceAndNewlineCharacterSet] characterIsMember:lastCharacter]) {
             [truncationString deleteCharactersInRange:NSMakeRange(lastLineRange.length - 1, 1)];
           }
         }

@@ -149,6 +149,7 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
 @synthesize detectedlinkLocations = _detectedlinkLocations;
 @synthesize explicitLinkLocations = _explicitLinkLocations;
 @synthesize minimumTimeToShowHighlightedLinkBackgroundColor = _minimumTimeToShowHighlightedLinkBackgroundColor;
+@synthesize highlightLinksAtAllTime = _highlightLinksAtAllTime;
 @synthesize originalLink = _originalLink;
 @synthesize touchedLink = _touchedLink;
 @synthesize longPressTimer = _longPressTimer;
@@ -571,6 +572,14 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
 
     [self attributedTextDidChange];
   }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+- (void)setHighlightLinksAtAllTime:(BOOL)highlightLinksAtAllTime {
+    if (_highlightLinksAtAllTime != highlightLinksAtAllTime) {
+        _highlightLinksAtAllTime = highlightLinksAtAllTime;
+    }
+    [self attributedTextDidChange];
 }
 
 
@@ -1349,14 +1358,9 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-- (void)drawHighlightWithRect:(CGRect)rect {
-  if ((nil == self.touchedLink && nil == self.actionSheetLink) || nil == self.highlightedLinkBackgroundColor) {
-    return;
-  }
+- (void)drawHighlightWithRect:(CGRect)rect forRange:(NSRange)linkRange {
   [self.highlightedLinkBackgroundColor setFill];
-
-  NSRange linkRange = nil != self.touchedLink ? self.touchedLink.range : self.actionSheetLink.range;
-
+    
   CFArrayRef lines = CTFrameGetLines(self.textFrame);
   CFIndex count = CFArrayGetCount(lines);
   CGPoint lineOrigins[count];
@@ -1506,7 +1510,17 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
     }
 
     [self drawImages];
-    [self drawHighlightWithRect:rect];
+    if (self.highlightedLinkBackgroundColor) {
+        if (self.highlightLinksAtAllTime) {
+            for (NSTextCheckingResult *linkResult in self.explicitLinkLocations) {
+                [self drawHighlightWithRect:rect forRange:linkResult.range];
+            }
+        } else if (self.touchedLink) {
+            [self drawHighlightWithRect:rect forRange:self.touchedLink.range];
+        } else if (self.actionSheetLink) {
+            [self drawHighlightWithRect:rect forRange:self.actionSheetLink.range];
+        }
+    }
 
     if (nil != self.shadowColor) {
       CGContextSetShadowWithColor(ctx, self.shadowOffset, self.shadowBlur, self.shadowColor.CGColor);

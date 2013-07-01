@@ -346,6 +346,9 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 - (void)addLink:(NSURL *)urlLink range:(NSRange)range {
+  if (urlLink == nil) {
+    @throw [NSException exceptionWithName:NSInvalidArgumentException reason:@"Url link cannot be nil" userInfo:nil];
+  }
   if (nil == self.explicitLinkLocations) {
     self.explicitLinkLocations = [[NSMutableArray alloc] init];
   }

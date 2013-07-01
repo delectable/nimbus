@@ -1186,9 +1186,11 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
     // runCount will be one in this line, causing the entire line to be highlighted rather than
     // just the link when when no special attributes are set.
     [attributedString removeAttribute:kNILinkAttributeName range:result.range];
-    [attributedString addAttribute:kNILinkAttributeName
-                             value:result.URL
-                             range:result.range];
+    if (result.URL) {
+      [attributedString addAttribute:kNILinkAttributeName
+                               value:result.URL
+                               range:result.range];
+    }
 
     if (self.linksHaveUnderlines) {
       [attributedString setUnderlineStyle:kCTUnderlineStyleSingle

@@ -1279,7 +1279,7 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-- (void)drawImages {
+- (void)drawImages:(CGRect)drawRect {
   if (0 == self.images.count) {
     return;
   }
@@ -1326,16 +1326,16 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
 
       CGFloat xOffset = CTLineGetOffsetForStringIndex(line, CTRunGetStringRange(run).location, nil);
 
-      CGFloat imageBoxOriginY = 0.0f;
+      CGFloat imageBoxOriginY = lineBottomY - drawRect.origin.y;
       switch (labelImage.verticalTextAlignment) {
         case NIVerticalTextAlignmentTop:
-          imageBoxOriginY = lineBottomY + (lineHeight - imageBoxHeight);
+          // nothing neeed
           break;
         case NIVerticalTextAlignmentMiddle:
-          imageBoxOriginY = lineBottomY + (lineHeight - imageBoxHeight) / 2.f;
+          imageBoxOriginY += (lineHeight - imageBoxHeight) / 2.0f;
           break;
         case NIVerticalTextAlignmentBottom:
-          imageBoxOriginY = lineBottomY;
+          imageBoxOriginY += (lineHeight - imageBoxHeight);
           break;
       }
 
@@ -1504,7 +1504,7 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
       CFRelease(framesetter);
     }
 
-    [self drawImages];
+      [self drawImages:rect];
     if (self.highlightedLinkBackgroundColor) {
         if (self.highlightLinksAtAllTime) {
             for (NSTextCheckingResult *linkResult in self.explicitLinkLocations) {

@@ -110,8 +110,8 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
 
 @interface NIAttributedLabel() <UIActionSheetDelegate>
 @property (nonatomic, NI_STRONG) NSMutableAttributedString* mutableAttributedString;
-@property (nonatomic, assign) CTFrameRef textFrame;
-@property (atomic, assign) BOOL detectingLinks;
+@property (nonatomic, assign) CTFrameRef textFrame; // CFType, manually managed lifetime, see setter.
+@property (atomic, assign) BOOL detectingLinks; // Atomic.
 @property (nonatomic, assign) BOOL linksHaveBeenDetected;
 @property (nonatomic, copy) NSArray* detectedlinkLocations;
 @property (nonatomic, NI_STRONG) NSMutableArray* explicitLinkLocations;
@@ -181,8 +181,26 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
 - (void)dealloc {
   [_longPressTimer invalidate];
 
-  if (nil != _textFrame) {
+  // The property is marked 'assign', but retain count for this CFType is managed here and via
+  // the setter.
+  if (NULL != _textFrame) {
     CFRelease(_textFrame);
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+- (void)setTextFrame:(CTFrameRef)textFrame {
+  // The property is marked 'assign', but retain count for this CFType is managed via this setter
+  // and -dealloc.
+  if (textFrame != _textFrame) {
+    if (NULL != _textFrame) {
+      CFRelease(_textFrame);
+    }
+    if (NULL != textFrame) {
+      CFRetain(textFrame);
+    }
+    _textFrame = textFrame;
   }
 }
 
@@ -222,10 +240,7 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 - (void)resetTextFrame {
-  if (nil != self.textFrame) {
-    CFRelease(self.textFrame);
-    self.textFrame = nil;
-  }
+  self.textFrame = NULL;
   self.accessibleElements = nil;
 }
 
@@ -1257,8 +1272,20 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
       unichar objectReplacementChar = 0xFFFC;
       NSString *objectReplacementString = [NSString stringWithCharacters:&objectReplacementChar length:1];
       NSMutableAttributedString* space = [[NSMutableAttributedString alloc] initWithString:objectReplacementString];
-      CFAttributedStringSetAttribute((__bridge CFMutableAttributedStringRef)space, CFRangeMake(0, 1), kCTRunDelegateAttributeName, delegate);
+
+      CFRange range = CFRangeMake(0, 1);
+      CFMutableAttributedStringRef spaceString =
+          (__bridge_retained CFMutableAttributedStringRef)space;
+      CFAttributedStringSetAttribute(spaceString, range, kCTRunDelegateAttributeName, delegate);
+      // Explicitly set the writing direction of this string to LTR, because in 'drawImages' we draw
+      // for LTR by drawing at offset to offset + width vs to offset - width as you would for RTL.
+      CFAttributedStringSetAttribute(spaceString,
+                                     range,
+                                     kCTWritingDirectionAttributeName,
+                                     (__bridge CFArrayRef)@[@(kCTWritingDirectionLeftToRight)]);
       CFRelease(delegate);
+      CFRelease(spaceString);
+
       [attributedString insertAttributedString:space atIndex:labelImage.index];
     }
   }
@@ -1417,7 +1444,8 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
 
   for (CFIndex lineIndex = 0; lineIndex < numberOfLines; lineIndex++) {
     CGPoint lineOrigin = lineOrigins[lineIndex];
-    CGContextSetTextPosition(ctx, lineOrigin.x, lineOrigin.y - rect.origin.y);
+    lineOrigin.y -= rect.origin.y; // adjust for verticalTextAlignment
+    CGContextSetTextPosition(ctx, lineOrigin.x, lineOrigin.y);
     CTLineRef line = CFArrayGetValueAtIndex(lines, lineIndex);
 
     BOOL shouldDrawLine = YES;
@@ -1490,16 +1518,17 @@ CGSize NISizeOfAttributedStringConstrainedToSize(NSAttributedString *attributedS
     CGAffineTransform transform = [self _transformForCoreText];
     CGContextConcatCTM(ctx, transform);
 
-    if (nil == self.textFrame) {
+    if (NULL == self.textFrame) {
       CFAttributedStringRef attributedString = (__bridge CFAttributedStringRef)attributedStringWithLinks;
       CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString(attributedString);
 
       CGMutablePathRef path = CGPathCreateMutable();
-      CGPathAddRect(path, nil, rect);
-      if (_textFrame) {
-        CFRelease(_textFrame);
+      CGPathAddRect(path, NULL, rect);
+      CTFrameRef textFrame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), path, NULL);
+      self.textFrame = textFrame;
+      if (textFrame) {
+        CFRelease(textFrame);
       }
-      _textFrame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), path, NULL);
       CGPathRelease(path);
       CFRelease(framesetter);
     }
